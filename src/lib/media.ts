@@ -23,3 +23,15 @@ export async function uploadPublicImage(file: File, folder: string) {
     imageUrl: data.publicUrl,
   };
 }
+
+export async function deletePublicFile(path?: string | null) {
+  if (!path) return;
+
+  const { error } = await supabase.storage
+    .from(SUPABASE_MEDIA_BUCKET)
+    .remove([path]);
+
+  if (error) {
+    throw error;
+  }
+}

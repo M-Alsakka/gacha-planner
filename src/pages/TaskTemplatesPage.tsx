@@ -19,6 +19,7 @@ import {
 import { extractErrorMessage } from "@/lib/api";
 import "../styles/task-templates.css";
 import { uploadPublicImage } from "@/lib/media";
+import toast from "react-hot-toast";
 
 type ModalMode = "create" | "edit";
 
@@ -88,6 +89,11 @@ export function TaskTemplatesPage() {
   const [imagePreviewUrl, setImagePreviewUrl] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [imagePath, setImagePath] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<TaskTemplate | null>(null);
+  const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(
+    null,
+  );
+
   const selectedGame = useMemo(
     () => games.find((game) => game.id === gameId) ?? null,
     [games, gameId],
@@ -110,7 +116,9 @@ export function TaskTemplatesPage() {
         setGameId(gameData[0].id);
       }
     } catch (err) {
-      setError(extractErrorMessage(err));
+      const message = extractErrorMessage(err);
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -140,7 +148,9 @@ export function TaskTemplatesPage() {
           setTaskTypeId(filtered[0]?.id ?? "");
         }
       } catch (err) {
-        setSubmitError(extractErrorMessage(err));
+        const message = extractErrorMessage(err);
+        setError(message);
+        toast.error(message);
       } finally {
         setFormLoading(false);
       }
@@ -273,12 +283,18 @@ export function TaskTemplatesPage() {
       } else if (editingTemplate) {
         await updateTaskTemplateRequest(editingTemplate.id, payload);
       }
-
+      toast.success(
+        modalMode === "create"
+          ? "Template created successfully"
+          : "Template updated successfully",
+      );
       await loadData();
       closeModal();
       resetForm();
     } catch (err) {
-      setSubmitError(extractErrorMessage(err));
+      const message = extractErrorMessage(err);
+      setError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -293,27 +309,45 @@ export function TaskTemplatesPage() {
       } else {
         await enableTaskTemplateRequest(template.id);
       }
-
+      toast.success(
+        template.isEnabled ? "Template disabled" : "Template enabled",
+      );
       await loadData();
     } catch (err) {
-      setError(extractErrorMessage(err));
+      const message = extractErrorMessage(err);
+      setError(message);
+      toast.error(message);
     }
   };
 
-  const handleDelete = async (template: TaskTemplate) => {
-    const confirmed = window.confirm(
-      `Delete template "${template.titleTemplate}"? Existing generated tasks will remain.`,
-    );
+  const requestDeleteTemplate = (template: TaskTemplate) => {
+    setDeleteTarget(template);
+  };
 
-    if (!confirmed) return;
+  const closeDeleteDialog = () => {
+    if (deletingTemplateId) return;
+    setDeleteTarget(null);
+  };
 
+  const confirmDeleteTemplate = async () => {
+    if (!deleteTarget) return;
+
+    setDeletingTemplateId(deleteTarget.id);
     setError("");
 
     try {
-      await deleteTaskTemplateRequest(template.id);
+      await deleteTaskTemplateRequest(deleteTarget.id);
+
+      // Do not delete template image yet, because existing generated tasks may still use it.
+      toast.success("Template deleted");
       await loadData();
+      setDeleteTarget(null);
     } catch (err) {
-      setError(extractErrorMessage(err));
+      const message = extractErrorMessage(err);
+      setError(message);
+      toast.error(message);
+    } finally {
+      setDeletingTemplateId(null);
     }
   };
 
@@ -401,7 +435,7 @@ export function TaskTemplatesPage() {
                 <button
                   type="button"
                   className="template-card__danger"
-                  onClick={() => handleDelete(template)}
+                  onClick={() => requestDeleteTemplate(template)}
                 >
                   Delete
                 </button>
@@ -632,6 +666,40 @@ export function TaskTemplatesPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {deleteTarget && (
+        <div className="templates-confirm-overlay" onClick={closeDeleteDialog}>
+          <div
+            className="templates-confirm"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3>Delete template?</h3>
+            <p>
+              Delete "{deleteTarget.titleTemplate}"? Existing generated tasks
+              will remain.
+            </p>
+
+            <div className="templates-confirm__actions">
+              <button
+                type="button"
+                className="templates-confirm__button"
+                onClick={closeDeleteDialog}
+                disabled={!!deletingTemplateId}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                className="templates-confirm__button templates-confirm__button--danger"
+                onClick={confirmDeleteTemplate}
+                disabled={!!deletingTemplateId}
+              >
+                {deletingTemplateId ? "Deleting..." : "Delete"}
+              </button>
+            </div>
           </div>
         </div>
       )}

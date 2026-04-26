@@ -123,3 +123,23 @@
 .profile-menu__item--danger {
   color: #b91c1c;
 }
+
+@media (max-width: 720px) {
+  .navbar {
+    height: auto;
+    min-height: 64px;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+
+  .navbar__left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .navbar__nav {
+    flex-wrap: wrap;
+  }
+}

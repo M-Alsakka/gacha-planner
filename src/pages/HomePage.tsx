@@ -18,7 +18,8 @@ import {
 import { extractErrorMessage } from "@/lib/api";
 import "../styles/home.css";
 import { generateTemplateTasksRequest } from "@/api/taskTemplates";
-import { uploadPublicImage } from "@/lib/media";
+import { deletePublicFile, uploadPublicImage } from "@/lib/media";
+import toast from "react-hot-toast";
 
 type PriorityValue = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 type ModalMode = "create" | "edit";
@@ -104,7 +105,7 @@ function TaskImage({ imageUrl }: { imageUrl?: string | null }) {
 
   return (
     <div className="task-image-placeholder">
-      <span>Image soon</span>
+      <span>No Image</span>
     </div>
   );
 }
@@ -227,7 +228,9 @@ export function HomePage() {
       setUnscheduledTasks(pendingData);
       setScheduledTasks(scheduledData);
     } catch (err) {
-      setError(extractErrorMessage(err));
+      const message = extractErrorMessage(err);
+      setError(message);
+      toast.error(message);
     } finally {
       setTasksLoading(false);
     }
@@ -245,7 +248,9 @@ export function HomePage() {
         setSelectedGameId(data[0].id);
       }
     } catch (err) {
-      setError(extractErrorMessage(err));
+      const message = extractErrorMessage(err);
+      setError(message);
+      toast.error(message);
     } finally {
       setGamesLoading(false);
     }
@@ -276,7 +281,9 @@ export function HomePage() {
           setSelectedTaskTypeId(filtered[0]?.id ?? "");
         }
       } catch (err) {
-        setSubmitError(extractErrorMessage(err));
+        const message = extractErrorMessage(err);
+        setError(message);
+        toast.error(message);
       } finally {
         setTaskTypesLoading(false);
       }
@@ -424,12 +431,18 @@ export function HomePage() {
           imagePath: finalImagePath || undefined,
         });
       }
-
+      toast.success(
+        modalMode === "create"
+          ? "Task created successfully"
+          : "Task updated successfully",
+      );
       await loadTasks();
       closeTaskModal();
       resetForm();
     } catch (err) {
-      setSubmitError(extractErrorMessage(err));
+      const message = extractErrorMessage(err);
+      setError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -447,9 +460,12 @@ export function HomePage() {
 
         try {
           await markTaskDoneRequest(taskId);
+          toast.success("Task marked as done");
           await loadTasks();
         } catch (err) {
-          setError(extractErrorMessage(err));
+          const message = extractErrorMessage(err);
+          setError(message);
+          toast.error(message);
         } finally {
           setFinishingTaskId(null);
         }
@@ -457,20 +473,26 @@ export function HomePage() {
     });
   };
 
-  const confirmDeleteTask = (taskId: string) => {
+  const confirmDeleteTask = (task: TaskListItem) => {
     openConfirmDialog({
       title: "Delete task?",
       message: "This task will be permanently deleted.",
       confirmLabel: "Delete",
       tone: "danger",
       action: async () => {
-        setDeletingTaskId(taskId);
+        setDeletingTaskId(task.id);
 
         try {
-          await deleteTaskRequest(taskId);
+          await deleteTaskRequest(task.id);
+          if (task.imagePath?.startsWith("tasks/")) {
+            await deletePublicFile(task.imagePath);
+          }
+          toast.success("Task deleted");
           await loadTasks();
         } catch (err) {
-          setError(extractErrorMessage(err));
+          const message = extractErrorMessage(err);
+          setError(message);
+          toast.error(message);
         } finally {
           setDeletingTaskId(null);
         }
@@ -483,9 +505,12 @@ export function HomePage() {
 
     try {
       await unscheduleTaskRequest(taskId);
+      toast.success("Task moved back to unscheduled");
       await loadTasks();
     } catch (err) {
-      setError(extractErrorMessage(err));
+      const message = extractErrorMessage(err);
+      setError(message);
+      toast.error(message);
     } finally {
       setUnschedulingTaskId(null);
     }
@@ -504,7 +529,9 @@ export function HomePage() {
       await scheduleTaskRequest(taskId, dropDate.toISOString());
       await loadTasks();
     } catch (err) {
-      setError(extractErrorMessage(err));
+      const message = extractErrorMessage(err);
+      setError(message);
+      toast.error(message);
     } finally {
       setDragOverDay(null);
     }
@@ -574,7 +601,11 @@ export function HomePage() {
                         <div className="home-task-card__top">
                           <strong>{task.title}</strong>
                         </div>
-
+                        {task.sourceType === "TEMPLATE_GENERATED" ? (
+                          <span className="task-badge task-badge--recurring">
+                            Recurring
+                          </span>
+                        ) : null}
                         <span>{task.game.name}</span>
                         <small>{task.taskType.label}</small>
                         <small>
@@ -598,7 +629,7 @@ export function HomePage() {
                           <button
                             type="button"
                             className="home-icon-button home-icon-button--danger"
-                            onClick={() => confirmDeleteTask(task.id)}
+                            onClick={() => confirmDeleteTask(task)}
                             disabled={deletingTaskId === task.id}
                             title="Delete task"
                             aria-label="Delete task"
@@ -727,7 +758,11 @@ export function HomePage() {
                               <div className="calendar-task-card__top">
                                 <strong>{task.title}</strong>
                               </div>
-
+                              {task.sourceType === "TEMPLATE_GENERATED" ? (
+                                <span className="task-badge task-badge--recurring">
+                                  Recurring
+                                </span>
+                              ) : null}
                               <span>{task.game.name}</span>
                               <small>{task.taskType.label}</small>
 
