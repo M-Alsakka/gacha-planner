@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from "react";
 import {
   createTaskTemplateRequest,
   deleteTaskTemplateRequest,
@@ -9,43 +9,44 @@ import {
   type CreateTaskTemplatePayload,
   type RecurrenceType,
   type TaskTemplate,
-} from '@/api/taskTemplates';
+} from "@/api/taskTemplates";
 import {
   getGameTaskTypesRequest,
   getGamesRequest,
   type Game,
   type TaskType,
-} from '@/api/games';
-import { extractErrorMessage } from '@/lib/api';
-import '../styles/task-templates.css';
+} from "@/api/games";
+import { extractErrorMessage } from "@/lib/api";
+import "../styles/task-templates.css";
+import { uploadPublicImage } from "@/lib/media";
 
-type ModalMode = 'create' | 'edit';
+type ModalMode = "create" | "edit";
 
 const WEEK_DAYS = [
-  { value: 0, label: 'Sunday' },
-  { value: 1, label: 'Monday' },
-  { value: 2, label: 'Tuesday' },
-  { value: 3, label: 'Wednesday' },
-  { value: 4, label: 'Thursday' },
-  { value: 5, label: 'Friday' },
-  { value: 6, label: 'Saturday' },
+  { value: 0, label: "Sunday" },
+  { value: 1, label: "Monday" },
+  { value: 2, label: "Tuesday" },
+  { value: 3, label: "Wednesday" },
+  { value: 4, label: "Thursday" },
+  { value: 5, label: "Friday" },
+  { value: 6, label: "Saturday" },
 ];
 
 function minutesToTimeInput(minutes: number) {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
 function timeInputToMinutes(value: string) {
-  const [h, m] = value.split(':').map(Number);
+  const [h, m] = value.split(":").map(Number);
   return h * 60 + m;
 }
 
 function toDateTimeLocal(value?: string | null) {
-  if (!value) return '';
+  if (!value) return "";
   const date = new Date(value);
-  const pad = (n: number) => String(n).padStart(2, '0');
+  const pad = (n: number) => String(n).padStart(2, "0");
 
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
     date.getDate(),
@@ -60,30 +61,33 @@ export function TaskTemplatesPage() {
   const [loading, setLoading] = useState(true);
   const [formLoading, setFormLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [submitError, setSubmitError] = useState('');
+  const [error, setError] = useState("");
+  const [submitError, setSubmitError] = useState("");
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<ModalMode>('create');
+  const [modalMode, setModalMode] = useState<ModalMode>("create");
   const [editingTemplate, setEditingTemplate] = useState<TaskTemplate | null>(
     null,
   );
 
-  const [gameId, setGameId] = useState('');
-  const [taskTypeId, setTaskTypeId] = useState('');
-  const [titleTemplate, setTitleTemplate] = useState('');
-  const [descriptionTemplate, setDescriptionTemplate] = useState('');
+  const [gameId, setGameId] = useState("");
+  const [taskTypeId, setTaskTypeId] = useState("");
+  const [titleTemplate, setTitleTemplate] = useState("");
+  const [descriptionTemplate, setDescriptionTemplate] = useState("");
   const [recurrenceType, setRecurrenceType] =
-    useState<RecurrenceType>('WEEKLY');
+    useState<RecurrenceType>("WEEKLY");
   const [intervalCount, setIntervalCount] = useState(1);
   const [dayOfWeek, setDayOfWeek] = useState(1);
   const [dayOfMonth, setDayOfMonth] = useState(1);
-  const [startAt, setStartAt] = useState('');
-  const [endAt, setEndAt] = useState('');
-  const [startTime, setStartTime] = useState('06:00');
-  const [endTime, setEndTime] = useState('05:59');
+  const [startAt, setStartAt] = useState("");
+  const [endAt, setEndAt] = useState("");
+  const [startTime, setStartTime] = useState("06:00");
+  const [endTime, setEndTime] = useState("05:59");
   const [autoCreateCalendarEntry, setAutoCreateCalendarEntry] = useState(false);
-
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [imagePath, setImagePath] = useState("");
   const selectedGame = useMemo(
     () => games.find((game) => game.id === gameId) ?? null,
     [games, gameId],
@@ -91,7 +95,7 @@ export function TaskTemplatesPage() {
 
   const loadData = async () => {
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
       const [templateData, gameData] = await Promise.all([
@@ -120,20 +124,20 @@ export function TaskTemplatesPage() {
     const run = async () => {
       if (!gameId) {
         setTaskTypes([]);
-        setTaskTypeId('');
+        setTaskTypeId("");
         return;
       }
 
       setFormLoading(true);
-      setSubmitError('');
+      setSubmitError("");
 
       try {
         const data = await getGameTaskTypesRequest(gameId);
-        const filtered = data.filter((item) => item.key !== 'daily');
+        const filtered = data.filter((item) => item.key !== "daily");
         setTaskTypes(filtered);
 
         if (!filtered.some((item) => item.id === taskTypeId)) {
-          setTaskTypeId(filtered[0]?.id ?? '');
+          setTaskTypeId(filtered[0]?.id ?? "");
         }
       } catch (err) {
         setSubmitError(extractErrorMessage(err));
@@ -147,20 +151,24 @@ export function TaskTemplatesPage() {
 
   const resetForm = () => {
     setEditingTemplate(null);
-    setModalMode('create');
-    setTaskTypeId('');
-    setTitleTemplate('');
-    setDescriptionTemplate('');
-    setRecurrenceType('WEEKLY');
+    setModalMode("create");
+    setTaskTypeId("");
+    setTitleTemplate("");
+    setDescriptionTemplate("");
+    setRecurrenceType("WEEKLY");
     setIntervalCount(1);
     setDayOfWeek(1);
     setDayOfMonth(1);
-    setStartAt('');
-    setEndAt('');
-    setStartTime('06:00');
-    setEndTime('05:59');
+    setStartAt("");
+    setEndAt("");
+    setStartTime("06:00");
+    setEndTime("05:59");
     setAutoCreateCalendarEntry(false);
-    setSubmitError('');
+    setSubmitError("");
+    setImageFile(null);
+    setImagePreviewUrl("");
+    setImageUrl("");
+    setImagePath("");
   };
 
   const openCreateModal = () => {
@@ -175,11 +183,11 @@ export function TaskTemplatesPage() {
 
   const openEditModal = (template: TaskTemplate) => {
     setEditingTemplate(template);
-    setModalMode('edit');
+    setModalMode("edit");
     setGameId(template.gameId);
     setTaskTypeId(template.taskTypeId);
     setTitleTemplate(template.titleTemplate);
-    setDescriptionTemplate(template.descriptionTemplate || '');
+    setDescriptionTemplate(template.descriptionTemplate || "");
     setRecurrenceType(template.recurrenceType);
     setIntervalCount(template.intervalCount);
     setDayOfWeek(template.dayOfWeek ?? 1);
@@ -189,17 +197,24 @@ export function TaskTemplatesPage() {
     setStartTime(minutesToTimeInput(template.startTimeMinutes));
     setEndTime(minutesToTimeInput(template.endTimeMinutes));
     setAutoCreateCalendarEntry(template.autoCreateCalendarEntry);
-    setSubmitError('');
+    setSubmitError("");
     setModalOpen(true);
+    setImageFile(null);
+    setImagePreviewUrl(template.imageUrl || "");
+    setImageUrl(template.imageUrl || "");
+    setImagePath(template.imagePath || "");
   };
 
   const closeModal = () => {
     if (submitting) return;
     setModalOpen(false);
-    setSubmitError('');
+    setSubmitError("");
   };
 
-  const buildPayload = (): CreateTaskTemplatePayload => {
+  const buildPayload = (
+    finalImageUrl = imageUrl,
+    finalImagePath = imagePath,
+  ): CreateTaskTemplatePayload => {
     const payload: CreateTaskTemplatePayload = {
       gameId,
       taskTypeId,
@@ -213,13 +228,15 @@ export function TaskTemplatesPage() {
       autoCreateCalendarEntry,
       startTimeMinutes: timeInputToMinutes(startTime),
       endTimeMinutes: timeInputToMinutes(endTime),
+      imageUrl: finalImageUrl || undefined,
+      imagePath: finalImagePath || undefined,
     };
 
-    if (recurrenceType === 'WEEKLY' || recurrenceType === 'BIWEEKLY') {
+    if (recurrenceType === "WEEKLY" || recurrenceType === "BIWEEKLY") {
       payload.dayOfWeek = dayOfWeek;
     }
 
-    if (recurrenceType === 'MONTHLY') {
+    if (recurrenceType === "MONTHLY") {
       payload.dayOfMonth = dayOfMonth;
     }
 
@@ -228,19 +245,30 @@ export function TaskTemplatesPage() {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setSubmitError('');
+    setSubmitError("");
 
     if (!gameId || !taskTypeId || !titleTemplate.trim()) {
-      setSubmitError('Game, task type, and title are required.');
+      setSubmitError("Game, task type, and title are required.");
       return;
     }
 
     setSubmitting(true);
 
     try {
-      const payload = buildPayload();
+      let finalImageUrl = imageUrl;
+      let finalImagePath = imagePath;
 
-      if (modalMode === 'create') {
+      if (imageFile) {
+        const uploaded = await uploadPublicImage(imageFile, "task-templates");
+        finalImageUrl = uploaded.imageUrl;
+        finalImagePath = uploaded.imagePath;
+      }
+
+      setImageUrl(finalImageUrl);
+      setImagePath(finalImagePath);
+      const payload = buildPayload(finalImageUrl, finalImagePath);
+
+      if (modalMode === "create") {
         await createTaskTemplateRequest(payload);
       } else if (editingTemplate) {
         await updateTaskTemplateRequest(editingTemplate.id, payload);
@@ -257,7 +285,7 @@ export function TaskTemplatesPage() {
   };
 
   const handleToggleEnabled = async (template: TaskTemplate) => {
-    setError('');
+    setError("");
 
     try {
       if (template.isEnabled) {
@@ -279,7 +307,7 @@ export function TaskTemplatesPage() {
 
     if (!confirmed) return;
 
-    setError('');
+    setError("");
 
     try {
       await deleteTaskTemplateRequest(template.id);
@@ -294,7 +322,10 @@ export function TaskTemplatesPage() {
       <div className="templates-page__header">
         <div>
           <h1>Task Templates</h1>
-          <p>Create recurring task rules for weekly, biweekly, monthly, and custom resets.</p>
+          <p>
+            Create recurring task rules for weekly, biweekly, monthly, and
+            custom resets.
+          </p>
         </div>
 
         <button
@@ -320,19 +351,26 @@ export function TaskTemplatesPage() {
           {templates.map((template) => (
             <div key={template.id} className="template-card">
               <div className="template-card__top">
+                {template.imageUrl ? (
+                  <img
+                    src={template.imageUrl}
+                    alt=""
+                    className="template-card__image"
+                  />
+                ) : null}
                 <div>
                   <h2>{template.titleTemplate}</h2>
-                  <p>{template.descriptionTemplate || 'No description'}</p>
+                  <p>{template.descriptionTemplate || "No description"}</p>
                 </div>
 
                 <span
                   className={`template-status ${
                     template.isEnabled
-                      ? 'template-status--enabled'
-                      : 'template-status--disabled'
+                      ? "template-status--enabled"
+                      : "template-status--disabled"
                   }`}
                 >
-                  {template.isEnabled ? 'Enabled' : 'Disabled'}
+                  {template.isEnabled ? "Enabled" : "Disabled"}
                 </span>
               </div>
 
@@ -341,11 +379,12 @@ export function TaskTemplatesPage() {
                 <span>{template.taskType.label}</span>
                 <span>{template.recurrenceType}</span>
                 <span>
-                  {minutesToTimeInput(template.startTimeMinutes)} →{' '}
+                  {minutesToTimeInput(template.startTimeMinutes)} →{" "}
                   {minutesToTimeInput(template.endTimeMinutes)}
                 </span>
                 <span>
-                  Auto schedule: {template.autoCreateCalendarEntry ? 'Yes' : 'No'}
+                  Auto schedule:{" "}
+                  {template.autoCreateCalendarEntry ? "Yes" : "No"}
                 </span>
               </div>
 
@@ -353,8 +392,11 @@ export function TaskTemplatesPage() {
                 <button type="button" onClick={() => openEditModal(template)}>
                   Edit
                 </button>
-                <button type="button" onClick={() => handleToggleEnabled(template)}>
-                  {template.isEnabled ? 'Disable' : 'Enable'}
+                <button
+                  type="button"
+                  onClick={() => handleToggleEnabled(template)}
+                >
+                  {template.isEnabled ? "Disable" : "Enable"}
                 </button>
                 <button
                   type="button"
@@ -377,7 +419,7 @@ export function TaskTemplatesPage() {
           >
             <div className="templates-modal__header">
               <h2>
-                {modalMode === 'create' ? 'Create Template' : 'Edit Template'}
+                {modalMode === "create" ? "Create Template" : "Edit Template"}
               </h2>
               <button type="button" onClick={closeModal}>
                 ×
@@ -436,7 +478,29 @@ export function TaskTemplatesPage() {
                     placeholder="Optional description"
                   />
                 </label>
+                <label className="templates-form__field templates-form__field--full">
+                  <span>Image</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] ?? null;
+                      setImageFile(file);
 
+                      if (file) {
+                        setImagePreviewUrl(URL.createObjectURL(file));
+                      }
+                    }}
+                  />
+
+                  {imagePreviewUrl ? (
+                    <img
+                      src={imagePreviewUrl}
+                      alt=""
+                      className="templates-form__image-preview"
+                    />
+                  ) : null}
+                </label>
                 <label className="templates-form__field">
                   <span>Recurrence</span>
                   <select
@@ -465,8 +529,8 @@ export function TaskTemplatesPage() {
                   />
                 </label>
 
-                {(recurrenceType === 'WEEKLY' ||
-                  recurrenceType === 'BIWEEKLY') && (
+                {(recurrenceType === "WEEKLY" ||
+                  recurrenceType === "BIWEEKLY") && (
                   <label className="templates-form__field">
                     <span>Day of Week</span>
                     <select
@@ -484,7 +548,7 @@ export function TaskTemplatesPage() {
                   </label>
                 )}
 
-                {recurrenceType === 'MONTHLY' && (
+                {recurrenceType === "MONTHLY" && (
                   <label className="templates-form__field">
                     <span>Day of Month</span>
                     <input
@@ -552,15 +616,19 @@ export function TaskTemplatesPage() {
               ) : null}
 
               <div className="templates-form__actions">
-                <button type="button" onClick={closeModal} disabled={submitting}>
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  disabled={submitting}
+                >
                   Cancel
                 </button>
                 <button type="submit" disabled={submitting}>
                   {submitting
-                    ? 'Saving...'
-                    : modalMode === 'create'
-                      ? 'Create Template'
-                      : 'Save Changes'}
+                    ? "Saving..."
+                    : modalMode === "create"
+                      ? "Create Template"
+                      : "Save Changes"}
                 </button>
               </div>
             </form>

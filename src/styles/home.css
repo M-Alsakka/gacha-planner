@@ -622,3 +622,19 @@
     background: #fecaca;
   }
 }
+
+.task-card-image {
+  width: 100%;
+  height: 108px;
+  object-fit: cover;
+  border-bottom: 1px solid #e5e7eb;
+  display: block;
+}
+
+.task-form__image-preview {
+  width: 180px;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
