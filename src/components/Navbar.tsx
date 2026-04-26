@@ -1,6 +1,6 @@
-import { NavLink } from 'react-router-dom';
-import { ProfileMenu } from './ProfileMenu';
-import '../styles/layout.css';
+import { NavLink } from "react-router-dom";
+import { ProfileMenu } from "./ProfileMenu";
+import "../styles/layout.css";
 
 export function Navbar() {
   return (
@@ -15,7 +15,7 @@ export function Navbar() {
             to="/"
             end
             className={({ isActive }) =>
-              `navbar__link ${isActive ? 'navbar__link--active' : ''}`
+              `navbar__link ${isActive ? "navbar__link--active" : ""}`
             }
           >
             Home
@@ -24,10 +24,18 @@ export function Navbar() {
           <NavLink
             to="/games"
             className={({ isActive }) =>
-              `navbar__link ${isActive ? 'navbar__link--active' : ''}`
+              `navbar__link ${isActive ? "navbar__link--active" : ""}`
             }
           >
             Games
+          </NavLink>
+          <NavLink
+            to="/task-templates"
+            className={({ isActive }) =>
+              `navbar__link ${isActive ? "navbar__link--active" : ""}`
+            }
+          >
+            Templates
           </NavLink>
         </nav>
       </div>

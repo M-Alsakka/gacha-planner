@@ -17,6 +17,7 @@ import {
 } from "@/api/games";
 import { extractErrorMessage } from "@/lib/api";
 import "../styles/home.css";
+import { generateTemplateTasksRequest } from "@/api/taskTemplates";
 
 type PriorityValue = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 type ModalMode = "create" | "edit";
@@ -172,7 +173,10 @@ export function HomePage() {
     return t;
   }, []);
 
-  const nowForValidation = useMemo(() => new Date(), [isTaskModalOpen, modalMode]);
+  const nowForValidation = useMemo(
+    () => new Date(),
+    [isTaskModalOpen, modalMode],
+  );
 
   const weekStart = useMemo(() => startOfWeekMonday(new Date()), []);
   const weekDays = useMemo(
@@ -181,13 +185,13 @@ export function HomePage() {
   );
 
   const scheduledDateError =
-    scheduledDate && new Date(scheduledDate).getTime() < nowForValidation.getTime()
+    scheduledDate &&
+    new Date(scheduledDate).getTime() < nowForValidation.getTime()
       ? "Scheduled date cannot be before the current time."
       : "";
 
   const dueDateError =
-    dueDate &&
-    new Date(dueDate).getTime() < nowForValidation.getTime()
+    dueDate && new Date(dueDate).getTime() < nowForValidation.getTime()
       ? "Due date cannot be before the current time."
       : "";
 
@@ -198,6 +202,13 @@ export function HomePage() {
     setError("");
 
     try {
+      const weekEnd = addDays(weekStart, 6);
+      console.log("Generating template tasks for week:", weekStart, weekEnd);
+      await generateTemplateTasksRequest(
+        weekStart.toISOString(),
+        weekEnd.toISOString(),
+      );
+
       const [pendingData, scheduledData] = await Promise.all([
         getTasksRequest("pending"),
         getTasksRequest("scheduled"),
@@ -523,7 +534,9 @@ export function HomePage() {
                             : "home-task-card--draggable"
                         }`}
                         draggable={!isOverdue}
-                        onDragStart={(event) => handleDragStartTask(event, task)}
+                        onDragStart={(event) =>
+                          handleDragStartTask(event, task)
+                        }
                         onClick={() => openEditModal(task)}
                       >
                         <TaskImagePlaceholder />
@@ -542,9 +555,9 @@ export function HomePage() {
                         </small>
                         {isOverdue ? (
                           <div className="home-task-card__warning" role="note">
-                            This task is past its due date. Update the due date or
-                            delete the task before you can drag it or mark it as
-                            done.
+                            This task is past its due date. Update the due date
+                            or delete the task before you can drag it or mark it
+                            as done.
                           </div>
                         ) : null}
 
@@ -575,7 +588,11 @@ export function HomePage() {
                             }
                             aria-label="Mark task as done"
                           >
-                            {finishingTaskId === task.id ? "..." : <CheckIcon />}
+                            {finishingTaskId === task.id ? (
+                              "..."
+                            ) : (
+                              <CheckIcon />
+                            )}
                           </button>
                         </div>
                       </div>
@@ -811,7 +828,9 @@ export function HomePage() {
                     disabled={modalMode === "edit"}
                   />
                   {scheduledDateError ? (
-                    <small className="task-form__error">{scheduledDateError}</small>
+                    <small className="task-form__error">
+                      {scheduledDateError}
+                    </small>
                   ) : null}
                 </label>
 
@@ -857,10 +876,7 @@ export function HomePage() {
                   Cancel
                 </button>
 
-                <button
-                  type="submit"
-                  disabled={submitting || hasDateErrors}
-                >
+                <button type="submit" disabled={submitting || hasDateErrors}>
                   {submitting
                     ? modalMode === "create"
                       ? "Creating..."
@@ -916,4 +932,3 @@ export function HomePage() {
     </div>
   );
 }
-
