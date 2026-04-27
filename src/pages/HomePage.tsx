@@ -160,6 +160,9 @@ export function HomePage() {
     null,
   );
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
+  const [schedulingTaskIds, setSchedulingTaskIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [dragOverDay, setDragOverDay] = useState<string | null>(null);
 
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -522,18 +525,59 @@ export function HomePage() {
       return;
     }
 
-    try {
-      const dropDate = new Date(date);
-      dropDate.setHours(12, 0, 0, 0);
+    if (schedulingTaskIds.has(taskId)) {
+      setDragOverDay(null);
+      return;
+    }
 
-      await scheduleTaskRequest(taskId, dropDate.toISOString());
+    const previousUnscheduledTasks = unscheduledTasks;
+    const previousScheduledTasks = scheduledTasks;
+    const droppedTask =
+      unscheduledTasks.find((task) => task.id === taskId) ??
+      scheduledTasks.find((task) => task.id === taskId);
+
+    if (!droppedTask) {
+      setDragOverDay(null);
+      return;
+    }
+
+    const dropDate = new Date(date);
+    dropDate.setHours(12, 0, 0, 0);
+    const scheduledDateIso = dropDate.toISOString();
+
+    setSchedulingTaskIds((prev) => new Set(prev).add(taskId));
+    setUnscheduledTasks((prev) => prev.filter((task) => task.id !== taskId));
+    setScheduledTasks((prev) => [
+      ...prev.filter((task) => task.id !== taskId),
+      {
+        ...droppedTask,
+        status: "SCHEDULED",
+        scheduledDate: scheduledDateIso,
+      },
+    ]);
+    setDragOverDay(null);
+
+    let scheduleSucceeded = false;
+
+    try {
+      await scheduleTaskRequest(taskId, scheduledDateIso);
+      scheduleSucceeded = true;
       await loadTasks();
     } catch (err) {
+      if (!scheduleSucceeded) {
+        setUnscheduledTasks(previousUnscheduledTasks);
+        setScheduledTasks(previousScheduledTasks);
+      }
+
       const message = extractErrorMessage(err);
       setError(message);
       toast.error(message);
     } finally {
-      setDragOverDay(null);
+      setSchedulingTaskIds((prev) => {
+        const next = new Set(prev);
+        next.delete(taskId);
+        return next;
+      });
     }
   };
 
@@ -581,20 +625,25 @@ export function HomePage() {
                 <div className="home-task-list">
                   {unscheduledTasks.map((task) => {
                     const isOverdue = isTaskOverdue(task);
+                    const isScheduling = schedulingTaskIds.has(task.id);
 
                     return (
                       <div
                         key={task.id}
                         className={`home-task-card ${
-                          isOverdue
+                          isScheduling
+                            ? "home-task-card--scheduling"
+                            : isOverdue
                             ? "home-task-card--overdue"
                             : "home-task-card--draggable"
                         }`}
-                        draggable={!isOverdue}
+                        draggable={!isOverdue && !isScheduling}
                         onDragStart={(event) =>
                           handleDragStartTask(event, task)
                         }
-                        onClick={() => openEditModal(task)}
+                        onClick={() => {
+                          if (!isScheduling) openEditModal(task);
+                        }}
                       >
                         <TaskImage imageUrl={task.imageUrl} />
 
@@ -604,6 +653,11 @@ export function HomePage() {
                         {task.sourceType === "TEMPLATE_GENERATED" ? (
                           <span className="task-badge task-badge--recurring">
                             Recurring
+                          </span>
+                        ) : null}
+                        {isScheduling ? (
+                          <span className="task-badge task-badge--scheduling">
+                            Scheduling...
                           </span>
                         ) : null}
                         <span>{task.game.name}</span>
@@ -630,7 +684,7 @@ export function HomePage() {
                             type="button"
                             className="home-icon-button home-icon-button--danger"
                             onClick={() => confirmDeleteTask(task)}
-                            disabled={deletingTaskId === task.id}
+                            disabled={deletingTaskId === task.id || isScheduling}
                             title="Delete task"
                             aria-label="Delete task"
                           >
@@ -641,7 +695,11 @@ export function HomePage() {
                             type="button"
                             className="home-icon-button home-icon-button--success"
                             onClick={() => confirmMarkDone(task.id)}
-                            disabled={isOverdue || finishingTaskId === task.id}
+                            disabled={
+                              isOverdue ||
+                              finishingTaskId === task.id ||
+                              isScheduling
+                            }
                             title={
                               isOverdue
                                 ? "Update the due date or delete the task first"
@@ -743,15 +801,24 @@ export function HomePage() {
                             {pastDay ? "Past day" : "Drop task here"}
                           </div>
                         ) : (
-                          dayTasks.map((task) => (
+                          dayTasks.map((task) => {
+                            const isScheduling = schedulingTaskIds.has(task.id);
+
+                            return (
                             <div
                               key={task.id}
-                              className="calendar-task-card calendar-task-card--draggable"
-                              draggable
+                              className={`calendar-task-card ${
+                                isScheduling
+                                  ? "calendar-task-card--scheduling"
+                                  : "calendar-task-card--draggable"
+                              }`}
+                              draggable={!isScheduling}
                               onDragStart={(event) =>
                                 handleDragStartTask(event, task)
                               }
-                              onClick={() => openEditModal(task)}
+                              onClick={() => {
+                                if (!isScheduling) openEditModal(task);
+                              }}
                             >
                               <TaskImage imageUrl={task.imageUrl} />
 
@@ -761,6 +828,11 @@ export function HomePage() {
                               {task.sourceType === "TEMPLATE_GENERATED" ? (
                                 <span className="task-badge task-badge--recurring">
                                   Recurring
+                                </span>
+                              ) : null}
+                              {isScheduling ? (
+                                <span className="task-badge task-badge--scheduling">
+                                  Scheduling...
                                 </span>
                               ) : null}
                               <span>{task.game.name}</span>
@@ -774,7 +846,10 @@ export function HomePage() {
                                   type="button"
                                   className="home-icon-button"
                                   onClick={() => handleUnschedule(task.id)}
-                                  disabled={unschedulingTaskId === task.id}
+                                  disabled={
+                                    unschedulingTaskId === task.id ||
+                                    isScheduling
+                                  }
                                   title="Unschedule"
                                 >
                                   {unschedulingTaskId === task.id ? "…" : "×"}
@@ -784,14 +859,17 @@ export function HomePage() {
                                   type="button"
                                   className="home-icon-button home-icon-button--success"
                                   onClick={() => confirmMarkDone(task.id)}
-                                  disabled={finishingTaskId === task.id}
+                                  disabled={
+                                    finishingTaskId === task.id || isScheduling
+                                  }
                                   title="Mark as done"
                                 >
                                   {finishingTaskId === task.id ? "…" : "✓"}
                                 </button>
                               </div>
                             </div>
-                          ))
+                            );
+                          })
                         )}
                       </div>
                     </div>

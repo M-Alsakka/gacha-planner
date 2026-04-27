@@ -397,15 +397,28 @@ export function TaskTemplatesPage() {
                   <p>{template.descriptionTemplate || "No description"}</p>
                 </div>
 
-                <span
-                  className={`template-status ${
+                <button
+                  type="button"
+                  className={`template-toggle ${
                     template.isEnabled
-                      ? "template-status--enabled"
-                      : "template-status--disabled"
+                      ? "template-toggle--enabled"
+                      : "template-toggle--disabled"
                   }`}
+                  onClick={() => handleToggleEnabled(template)}
+                  aria-label={
+                    template.isEnabled
+                      ? "Disable template"
+                      : "Enable template"
+                  }
+                  aria-pressed={template.isEnabled}
+                  title={
+                    template.isEnabled
+                      ? "Disable template"
+                      : "Enable template"
+                  }
                 >
-                  {template.isEnabled ? "Enabled" : "Disabled"}
-                </span>
+                  <span className="template-toggle__knob" />
+                </button>
               </div>
 
               <div className="template-card__meta">
@@ -425,12 +438,6 @@ export function TaskTemplatesPage() {
               <div className="template-card__actions">
                 <button type="button" onClick={() => openEditModal(template)}>
                   Edit
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleToggleEnabled(template)}
-                >
-                  {template.isEnabled ? "Disable" : "Enable"}
                 </button>
                 <button
                   type="button"

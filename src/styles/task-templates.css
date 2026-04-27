@@ -46,12 +46,17 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    position: relative;
 }
 
 .template-card__top {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     gap: 12px;
+}
+
+.template-card__top > div {
+    padding-right: 56px;
 }
 
 .template-card__top h2 {
@@ -64,22 +69,53 @@
     color: #6b7280;
 }
 
-.template-status {
-    height: fit-content;
+.template-toggle {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 46px;
+    height: 28px;
+    border: 0;
     border-radius: 999px;
-    padding: 5px 10px;
-    font-size: 12px;
-    font-weight: 700;
+    padding: 3px;
+    cursor: pointer;
+    box-shadow: inset 0 0 0 1px rgba(17, 24, 39, 0.08);
+    transition:
+        background 160ms ease,
+        box-shadow 160ms ease;
 }
 
-.template-status--enabled {
-    background: #dcfce7;
-    color: #166534;
+.template-toggle--enabled {
+    background: #22c55e;
 }
 
-.template-status--disabled {
-    background: #f3f4f6;
-    color: #4b5563;
+.template-toggle--disabled {
+    background: #cbd5e1;
+}
+
+.template-toggle__knob {
+    display: block;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    background: #ffffff;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+    transition: transform 160ms ease;
+}
+
+.template-toggle--enabled .template-toggle__knob {
+    transform: translateX(18px);
+}
+
+.template-toggle:hover {
+    box-shadow:
+        inset 0 0 0 1px rgba(17, 24, 39, 0.12),
+        0 4px 12px rgba(15, 23, 42, 0.18);
+}
+
+.template-toggle:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.35);
+    outline-offset: 3px;
 }
 
 .template-card__meta {
@@ -264,23 +300,6 @@
     object-fit: cover;
     border-radius: 12px;
     border: 1px solid #e5e7eb;
-}
-
-.template-card__image {
-  width: 100%;
-  height: 150px;
-  object-fit: cover;
-  border-radius: 14px;
-  border: 1px solid #e5e7eb;
-  margin-bottom: 12px;
-}
-
-.templates-form__image-preview {
-  width: 200px;
-  height: 120px;
-  object-fit: cover;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
 }
 
 .templates-confirm-overlay {
