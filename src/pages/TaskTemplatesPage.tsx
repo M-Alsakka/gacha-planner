@@ -16,12 +16,17 @@ import {
   type Game,
   type TaskType,
 } from "@/api/games";
-import { extractErrorMessage } from "@/lib/api";
+import { ErrorNotice } from "@/components/ErrorNotice";
+import { extractErrorMessage, isUnauthorizedError } from "@/lib/api";
 import "../styles/task-templates.css";
 import { uploadPublicImage } from "@/lib/media";
 import toast from "react-hot-toast";
 
 type ModalMode = "create" | "edit";
+type PageError = {
+  message: string;
+  isUnauthorized: boolean;
+};
 
 const WEEK_DAYS = [
   { value: 0, label: "Sunday" },
@@ -62,7 +67,7 @@ export function TaskTemplatesPage() {
   const [loading, setLoading] = useState(true);
   const [formLoading, setFormLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<PageError | null>(null);
   const [submitError, setSubmitError] = useState("");
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -101,7 +106,7 @@ export function TaskTemplatesPage() {
 
   const loadData = async () => {
     setLoading(true);
-    setError("");
+    setError(null);
 
     try {
       const [templateData, gameData] = await Promise.all([
@@ -117,7 +122,10 @@ export function TaskTemplatesPage() {
       }
     } catch (err) {
       const message = extractErrorMessage(err);
-      setError(message);
+      setError({
+        message,
+        isUnauthorized: isUnauthorizedError(err),
+      });
       toast.error(message);
     } finally {
       setLoading(false);
@@ -149,7 +157,10 @@ export function TaskTemplatesPage() {
         }
       } catch (err) {
         const message = extractErrorMessage(err);
-        setError(message);
+        setError({
+          message,
+          isUnauthorized: isUnauthorizedError(err),
+        });
         toast.error(message);
       } finally {
         setFormLoading(false);
@@ -293,7 +304,10 @@ export function TaskTemplatesPage() {
       resetForm();
     } catch (err) {
       const message = extractErrorMessage(err);
-      setError(message);
+      setError({
+        message,
+        isUnauthorized: isUnauthorizedError(err),
+      });
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -301,7 +315,7 @@ export function TaskTemplatesPage() {
   };
 
   const handleToggleEnabled = async (template: TaskTemplate) => {
-    setError("");
+    setError(null);
 
     try {
       if (template.isEnabled) {
@@ -315,7 +329,10 @@ export function TaskTemplatesPage() {
       await loadData();
     } catch (err) {
       const message = extractErrorMessage(err);
-      setError(message);
+      setError({
+        message,
+        isUnauthorized: isUnauthorizedError(err),
+      });
       toast.error(message);
     }
   };
@@ -333,7 +350,7 @@ export function TaskTemplatesPage() {
     if (!deleteTarget) return;
 
     setDeletingTemplateId(deleteTarget.id);
-    setError("");
+    setError(null);
 
     try {
       await deleteTaskTemplateRequest(deleteTarget.id);
@@ -344,7 +361,10 @@ export function TaskTemplatesPage() {
       setDeleteTarget(null);
     } catch (err) {
       const message = extractErrorMessage(err);
-      setError(message);
+      setError({
+        message,
+        isUnauthorized: isUnauthorizedError(err),
+      });
       toast.error(message);
     } finally {
       setDeletingTemplateId(null);
@@ -371,7 +391,13 @@ export function TaskTemplatesPage() {
         </button>
       </div>
 
-      {error ? <div className="templates-error">{error}</div> : null}
+      {error ? (
+        <ErrorNotice
+          className="templates-error"
+          message={error.message}
+          isUnauthorized={error.isUnauthorized}
+        />
+      ) : null}
 
       {loading ? (
         <div className="templates-panel">Loading templates...</div>

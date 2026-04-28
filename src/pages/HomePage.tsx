@@ -15,14 +15,23 @@ import {
   type Game,
   type TaskType,
 } from "@/api/games";
-import { extractErrorMessage } from "@/lib/api";
+import { extractErrorMessage, isUnauthorizedError } from "@/lib/api";
+import { ErrorNotice } from "@/components/ErrorNotice";
 import "../styles/home.css";
 import { generateTemplateTasksRequest } from "@/api/taskTemplates";
-import { deletePublicFile, uploadPublicImage } from "@/lib/media";
+import {
+  deletePublicFile,
+  getPublicFilePath,
+  uploadPublicImage,
+} from "@/lib/media";
 import toast from "react-hot-toast";
 
 type PriorityValue = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 type ModalMode = "create" | "edit";
+type PageError = {
+  message: string;
+  isUnauthorized: boolean;
+};
 
 type ConfirmDialogState = {
   open: boolean;
@@ -152,7 +161,7 @@ export function HomePage() {
   const [dueDate, setDueDate] = useState("");
   const [priority, setPriority] = useState<PriorityValue>("MEDIUM");
 
-  const [error, setError] = useState("");
+  const [error, setError] = useState<PageError | null>(null);
   const [submitError, setSubmitError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [finishingTaskId, setFinishingTaskId] = useState<string | null>(null);
@@ -213,7 +222,7 @@ export function HomePage() {
 
   const loadTasks = async () => {
     setTasksLoading(true);
-    setError("");
+    setError(null);
 
     try {
       const weekEnd = addDays(weekStart, 6);
@@ -232,7 +241,7 @@ export function HomePage() {
       setScheduledTasks(scheduledData);
     } catch (err) {
       const message = extractErrorMessage(err);
-      setError(message);
+      setError({ message, isUnauthorized: isUnauthorizedError(err) });
       toast.error(message);
     } finally {
       setTasksLoading(false);
@@ -241,7 +250,7 @@ export function HomePage() {
 
   const loadGames = async () => {
     setGamesLoading(true);
-    setError("");
+    setError(null);
 
     try {
       const data = await getGamesRequest();
@@ -252,7 +261,7 @@ export function HomePage() {
       }
     } catch (err) {
       const message = extractErrorMessage(err);
-      setError(message);
+      setError({ message, isUnauthorized: isUnauthorizedError(err) });
       toast.error(message);
     } finally {
       setGamesLoading(false);
@@ -285,7 +294,7 @@ export function HomePage() {
         }
       } catch (err) {
         const message = extractErrorMessage(err);
-        setError(message);
+        setError({ message, isUnauthorized: isUnauthorizedError(err) });
         toast.error(message);
       } finally {
         setTaskTypesLoading(false);
@@ -444,7 +453,7 @@ export function HomePage() {
       resetForm();
     } catch (err) {
       const message = extractErrorMessage(err);
-      setError(message);
+      setError({ message, isUnauthorized: isUnauthorizedError(err) });
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -452,7 +461,9 @@ export function HomePage() {
   };
 
   const deleteTaskImage = async (task: TaskListItem) => {
-    if (task.imagePath?.startsWith("tasks/")) {
+    const imagePath = getPublicFilePath(task.imagePath);
+
+    if (imagePath?.startsWith("tasks/")) {
       await deletePublicFile(task.imagePath);
     }
   };
@@ -474,7 +485,7 @@ export function HomePage() {
           await loadTasks();
         } catch (err) {
           const message = extractErrorMessage(err);
-          setError(message);
+          setError({ message, isUnauthorized: isUnauthorizedError(err) });
           toast.error(message);
         } finally {
           setFinishingTaskId(null);
@@ -499,7 +510,7 @@ export function HomePage() {
           await loadTasks();
         } catch (err) {
           const message = extractErrorMessage(err);
-          setError(message);
+          setError({ message, isUnauthorized: isUnauthorizedError(err) });
           toast.error(message);
         } finally {
           setDeletingTaskId(null);
@@ -517,7 +528,7 @@ export function HomePage() {
       await loadTasks();
     } catch (err) {
       const message = extractErrorMessage(err);
-      setError(message);
+      setError({ message, isUnauthorized: isUnauthorizedError(err) });
       toast.error(message);
     } finally {
       setUnschedulingTaskId(null);
@@ -575,7 +586,7 @@ export function HomePage() {
       }
 
       const message = extractErrorMessage(err);
-      setError(message);
+      setError({ message, isUnauthorized: isUnauthorizedError(err) });
       toast.error(message);
     } finally {
       setSchedulingTaskIds((prev) => {
@@ -610,7 +621,13 @@ export function HomePage() {
             </div>
 
             {tasksLoading ? <p>Loading tasks...</p> : null}
-            {error ? <div className="home-error">{error}</div> : null}
+            {error ? (
+              <ErrorNotice
+                className="home-error"
+                message={error.message}
+                isUnauthorized={error.isUnauthorized}
+              />
+            ) : null}
 
             {!tasksLoading && !error && unscheduledTasks.length === 0 ? (
               <div className="home-empty-state">

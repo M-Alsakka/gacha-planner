@@ -70,3 +70,7 @@ export function extractErrorMessage(error: unknown): string {
 
   return error instanceof Error ? error.message : 'Failed to load active session';
 }
+
+export function isUnauthorizedError(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 401;
+}

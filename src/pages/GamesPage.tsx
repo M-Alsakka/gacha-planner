@@ -7,8 +7,14 @@ import {
   type Game,
   type TaskType,
 } from '@/api/games';
-import { extractErrorMessage } from '@/lib/api';
+import { ErrorNotice } from '@/components/ErrorNotice';
+import { extractErrorMessage, isUnauthorizedError } from '@/lib/api';
 import '../styles/games.css';
+
+type PageError = {
+  message: string;
+  isUnauthorized: boolean;
+};
 
 export function GamesPage() {
   const [games, setGames] = useState<Game[]>([]);
@@ -18,12 +24,12 @@ export function GamesPage() {
 
   const [gamesLoading, setGamesLoading] = useState(true);
   const [detailsLoading, setDetailsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<PageError | null>(null);
 
   useEffect(() => {
     const run = async () => {
       setGamesLoading(true);
-      setError('');
+      setError(null);
 
       try {
         const data = await getGamesRequest();
@@ -33,7 +39,10 @@ export function GamesPage() {
           setSelectedGame(data[0]);
         }
       } catch (err) {
-        setError(extractErrorMessage(err));
+        setError({
+          message: extractErrorMessage(err),
+          isUnauthorized: isUnauthorizedError(err),
+        });
       } finally {
         setGamesLoading(false);
       }
@@ -51,7 +60,7 @@ export function GamesPage() {
       }
 
       setDetailsLoading(true);
-      setError('');
+      setError(null);
 
       try {
         const [taskTypeData, activityTypeData] = await Promise.all([
@@ -62,7 +71,10 @@ export function GamesPage() {
         setTaskTypes(taskTypeData);
         setActivityTypes(activityTypeData);
       } catch (err) {
-        setError(extractErrorMessage(err));
+        setError({
+          message: extractErrorMessage(err),
+          isUnauthorized: isUnauthorizedError(err),
+        });
       } finally {
         setDetailsLoading(false);
       }
@@ -101,7 +113,13 @@ export function GamesPage() {
         </aside>
 
         <section className="games-content">
-          {error ? <div className="games-content__error">{error}</div> : null}
+          {error ? (
+            <ErrorNotice
+              className="games-content__error"
+              message={error.message}
+              isUnauthorized={error.isUnauthorized}
+            />
+          ) : null}
 
           {!selectedGame ? (
             <div className="games-panel">

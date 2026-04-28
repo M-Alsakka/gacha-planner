@@ -24,7 +24,33 @@ export async function uploadPublicImage(file: File, folder: string) {
   };
 }
 
-export async function deletePublicFile(path?: string | null) {
+export function getPublicFilePath(pathOrUrl?: string | null) {
+  if (!pathOrUrl) return null;
+
+  if (!pathOrUrl.startsWith('http://') && !pathOrUrl.startsWith('https://')) {
+    return pathOrUrl;
+  }
+
+  try {
+    const url = new URL(pathOrUrl);
+    const publicBucketPrefix = `/storage/v1/object/public/${SUPABASE_MEDIA_BUCKET}/`;
+    const prefixIndex = url.pathname.indexOf(publicBucketPrefix);
+
+    if (prefixIndex === -1) {
+      return null;
+    }
+
+    return decodeURIComponent(
+      url.pathname.slice(prefixIndex + publicBucketPrefix.length),
+    );
+  } catch {
+    return null;
+  }
+}
+
+export async function deletePublicFile(pathOrUrl?: string | null) {
+  const path = getPublicFilePath(pathOrUrl);
+
   if (!path) return;
 
   const { error } = await supabase.storage
