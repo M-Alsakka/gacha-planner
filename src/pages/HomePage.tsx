@@ -451,7 +451,13 @@ export function HomePage() {
     }
   };
 
-  const confirmMarkDone = (taskId: string) => {
+  const deleteTaskImage = async (task: TaskListItem) => {
+    if (task.imagePath?.startsWith("tasks/")) {
+      await deletePublicFile(task.imagePath);
+    }
+  };
+
+  const confirmMarkDone = (task: TaskListItem) => {
     openConfirmDialog({
       title: "Mark task as done?",
       message:
@@ -459,10 +465,11 @@ export function HomePage() {
       confirmLabel: "Mark done",
       tone: "success",
       action: async () => {
-        setFinishingTaskId(taskId);
+        setFinishingTaskId(task.id);
 
         try {
-          await markTaskDoneRequest(taskId);
+          await markTaskDoneRequest(task.id);
+          await deleteTaskImage(task);
           toast.success("Task marked as done");
           await loadTasks();
         } catch (err) {
@@ -487,9 +494,7 @@ export function HomePage() {
 
         try {
           await deleteTaskRequest(task.id);
-          if (task.imagePath?.startsWith("tasks/")) {
-            await deletePublicFile(task.imagePath);
-          }
+          await deleteTaskImage(task);
           toast.success("Task deleted");
           await loadTasks();
         } catch (err) {
@@ -694,7 +699,7 @@ export function HomePage() {
                           <button
                             type="button"
                             className="home-icon-button home-icon-button--success"
-                            onClick={() => confirmMarkDone(task.id)}
+                            onClick={() => confirmMarkDone(task)}
                             disabled={
                               isOverdue ||
                               finishingTaskId === task.id ||
@@ -858,7 +863,7 @@ export function HomePage() {
                                 <button
                                   type="button"
                                   className="home-icon-button home-icon-button--success"
-                                  onClick={() => confirmMarkDone(task.id)}
+                                  onClick={() => confirmMarkDone(task)}
                                   disabled={
                                     finishingTaskId === task.id || isScheduling
                                   }
