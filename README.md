@@ -1,73 +1,151 @@
-# React + TypeScript + Vite
+# 🎯 Gacha Planner
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern planner for gacha games designed to help you manage daily tasks, events, materials, and long-term goals — all in one place.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## ✨ Current Status
 
-## React Compiler
+🚧 **Active Development (Early Public Version)**
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Core planning features are implemented, with more advanced systems coming soon.
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## ✅ Features
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 🗓️ Task Planner (Completed)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+* Create, edit, and delete tasks
+* Drag & drop scheduling (weekly calendar)
+* Pending / Scheduled / Done workflow
+* Overdue task handling
+* Confirmation dialogs & validation
+* Clean and responsive UI
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+---
+
+## 🔜 Coming Soon
+
+### 📦 Materials & Inventory System
+
+* Track owned materials per game
+* Link materials to tasks and goals
+* Visual progress tracking
+
+### 🎯 Planner Goals
+
+* Define long-term farming goals
+* Compare required vs owned materials
+* Smart planning suggestions
+
+### 🌐 HoYoLAB Integration
+
+* Sync game data automatically
+* Import account progress
+* Reduce manual tracking
+
+### 🧠 Smart Task Automation
+
+* Auto-generated recurring tasks
+* Event-based tasks (limited-time events)
+* Game-specific schedules
+
+---
+
+## 🧩 Project Structure
+
+```txt
+frontend/   → React + Vite (UI)
+backend/    → NestJS + Prisma (API)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 🚀 Modes
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Gacha Planner supports two modes:
+
+### 🧍 Single-User Mode (Default)
+
+* Designed for personal use
+* HoYoLAB tokens stored in `.env`
+* No account system
+* Recommended for self-hosting
+
+### 👥 Multi-User Mode (Planned)
+
+* User accounts & authentication
+* Per-user encrypted HoYoLAB tokens
+* Shared global tasks + personal state
+* Intended for public hosting
+
+---
+
+## ⚙️ Getting Started (Coming Soon)
+
+Full setup guide will be available in the documentation website.
+
+For now, you can expect:
+
+* Docker-based setup
+* PostgreSQL database
+* Environment configuration via `.env`
+
+---
+
+## 📚 Documentation
+
+A full documentation website is planned, including:
+
+* User guide (non-developers)
+* Self-hosting guide
+* Developer/API reference
+* Architecture overview
+
+---
+
+## 🔐 Security Note (Future Multi-User Mode)
+
+When multi-user mode is released:
+
+* Sensitive tokens will be **encrypted at rest**
+* Tokens will **never be exposed to the frontend**
+* Users will be able to **remove their data at any time**
+
+For maximum privacy, self-hosting will always be supported.
+
+---
+
+## 🛠️ Tech Stack
+
+* **Frontend:** React + Vite + TypeScript
+* **Backend:** NestJS + Prisma
+* **Database:** PostgreSQL
+* **Auth:** JWT (planned for multi-user)
+* **Storage:** (planned for assets/materials)
+
+---
+
+## 📌 Roadmap
+
+* [x] Task system (manual + scheduling)
+* [x] Calendar UI
+* [ ] Materials system
+* [ ] Planner goals
+* [ ] HoYoLAB integration
+* [ ] Multi-user support
+* [ ] Documentation website
+* [ ] Smart automation system
+
+---
+
+## 🤝 Contributing
+
+Not open for contributions yet — project structure is still evolving.
+
+---
+
+## 📄 License
+
+To be defined.
